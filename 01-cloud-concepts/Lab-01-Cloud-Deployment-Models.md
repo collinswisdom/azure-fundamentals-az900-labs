@@ -36,8 +36,6 @@ By completing this lab, I can:
 
 ### Definition
 
-### Definition
-
 A Public Cloud is a cloud computing environment where the cloud provider owns, operates, and maintains the infrastructure. Customers access computing resources such as virtual machines, storage, databases, and networking services over the internet on a pay-as-you-go basis.
 
 Microsoft Azure is an example of a public cloud platform.
@@ -54,13 +52,30 @@ Microsoft Azure is an example of a public cloud platform.
 
 ### Real-World Example
 
-### Real-World Example
-
 KollraX wants to host its website and customer portal without purchasing physical servers.
 
 Instead of building a data center, KollraX deploys an Azure App Service and an Azure SQL Database in Microsoft Azure.
 
 Microsoft manages the hardware, networking, power, cooling, and physical security, while KollraX manages its application and data.
+
+### Architecture Diagram
+
+```text
+                 Internet
+                      │
+                      ▼
+             Microsoft Azure
+     ┌──────────────────────────┐
+     │      Azure Services      │
+     │  • Virtual Machines      │
+     │  • App Service           │
+     │  • Storage               │
+     │  • SQL Database          │
+     └──────────────────────────┘
+          ▲        ▲        ▲
+          │        │        │
+     KollraX   School   Bank
+```
 
 ## Private Cloud
 
