@@ -1,42 +1,42 @@
-# ☁️ Module 01: Cloud Concepts
+# ☁️ Module 01: Cloud Concepts & Engineering Trade-Offs
 
-Welcome to **Module 01: Cloud Concepts** of the Azure Fundamentals (AZ-900) portfolio. This module covers the foundational principles of cloud computing, deployment models, service categories, pricing structures, and SLA guarantees required to understand how enterprise environments leverage Microsoft Azure.
-
----
-
-## 🎯 Module Objectives
-
-By completing this module, you will understand:
-* 🌐 Differences between **Public**, **Private**, **Hybrid**, and **Multicloud** deployment models.
-* 📦 Differences between **IaaS**, **PaaS**, and **SaaS** service models.
-* 🛡️ The **Shared Responsibility Model** across various cloud deployment types.
-* 💰 Cloud financial models (**CapEx vs. OpEx**) and cost estimation techniques.
-* ⏱️ Azure **Service Level Agreements (SLAs)**, composite SLAs, and availability metrics.
+Welcome to **Module 01: Cloud Concepts** of my Azure Fundamentals portfolio. This module moves beyond basic theory to examine how core cloud principles—deployment architectures, service models, financial structures, and SLAs—are evaluated and implemented in real-world enterprise environments.
 
 ---
 
-## 📚 Labs in this Module
+## 🎯 Engineering Objectives
 
-| Lab | Title | Description | Status |
+In this module, I demonstrate and evaluate:
+* 🌐 **Architectural Selection:** Evaluating Public, Private, Hybrid, and Multicloud architectures based on data residency, network latency, and compliance constraints.
+* 📦 **Service Model Mapping:** Deciding between IaaS, PaaS, and SaaS to balance administrative overhead with operational control.
+* 🛡️ **Shared Responsibility Governance:** Mapping security boundaries between Microsoft Azure and customer operations.
+* 💰 **Financial Optimization:** Analyzing CapEx vs. OpEx models and conducting cost estimations using the Azure Pricing Calculator.
+* ⏱️ **Reliability Engineering:** Calculating composite SLAs and designing high-availability strategies for critical workloads.
+
+---
+
+## 📚 Module Labs & Progress
+
+| Lab | Title | Focused Engineering Scenario | Status |
 | :---: | :--- | :--- | :---: |
-| **Lab 01** | [Cloud Deployment Models](./Lab-01-Cloud-Deployment-Models.md) | Compare Public, Private, Hybrid, and Multicloud deployment models. | 🟢 Completed |
-| **Lab 02** | [Cloud Service Models](./Lab-02-Cloud-Service-Models.md) | Map Azure services to IaaS, PaaS, and SaaS models. | ⬜ Pending |
-| **Lab 03** | [Shared Responsibility Model](./Lab-03-Shared-Responsibility-Model.md) | Analyze security responsibilities between Microsoft and customer. | ⬜ Pending |
-| **Lab 04** | [Azure Pricing and Consumption](./Lab-04-Azure-Pricing-and-Consumption.md) | Generate cost estimations using the Azure Pricing Calculator. | ⬜ Pending |
-| **Lab 05** | [Azure Service Level Agreements](./Lab-05-Azure-Service-Level-Agreements.md) | Calculate composite SLAs and design high-availability scenarios. | ⬜ Pending |
+| **Lab 01** | [Cloud Deployment Models](./Lab-01-Cloud-Deployment-Models.md) | Architectural evaluation and hybrid migration planning for legal client data. | 🟢 Completed |
+| **Lab 02** | [Cloud Service Models](./Lab-02-Cloud-Service-Models.md) | Mapping workload tiers (IaaS vs PaaS vs SaaS) for enterprise M365 & Azure environments. | ⬜ Pending |
+| **Lab 03** | [Shared Responsibility Model](./Lab-03-Shared-Responsibility-Model.md) | Security auditing and boundary mapping between Microsoft and enterprise operations. | ⬜ Pending |
+| **Lab 04** | [Azure Pricing and Consumption](./Lab-04-Azure-Pricing-and-Consumption.md) | Cost estimation, resource tagging, and budget guardrails via Azure Calculator. | ⬜ Pending |
+| **Lab 05** | [Azure Service Level Agreements](./Lab-05-Azure-Service-Level-Agreements.md) | Calculating composite uptime guarantees for multi-tier Azure solutions. | ⬜ Pending |
 
 ---
 
-## 🔑 Key Concepts Summary
+## 🔑 Architectural Reference
 
 ```text
-Cloud Computing
+Enterprise Cloud Framework
 ├── Deployment Models
-│   ├── Public Cloud (Pay-as-you-go, shared infrastructure)
-│   ├── Private Cloud (Dedicated hardware, full control)
-│   ├── Hybrid Cloud (On-premises + Azure via ExpressRoute/VPN)
-│   └── Multicloud (Azure + AWS/GCP integration)
+│   ├── Public Cloud (Pay-as-you-go elasticity, shared hypervisor isolation)
+│   ├── Private Cloud (Single-tenant dedicated infrastructure, high compliance)
+│   ├── Hybrid Cloud (On-premises Active Directory/Data linked via IPsec VPN or ExpressRoute)
+│   └── Multicloud (Azure Entra ID identity backbone extended to multi-cloud platforms)
 └── Service Models
-    ├── IaaS (Virtual Machines, VNets - Maximum Control)
-    ├── PaaS (App Service, Azure SQL - Focus on Application Code)
-    └── SaaS (Microsoft 365, Dynamics 365 - Fully Managed Software)
+    ├── IaaS (Azure VMs, VNets - Full OS & network control)
+    ├── PaaS (Azure App Service, Azure SQL - Reduced management overhead)
+    └── SaaS (Microsoft 365, Entra ID - Pure service consumption)
