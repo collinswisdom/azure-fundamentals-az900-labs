@@ -1,42 +1,39 @@
-# ☁️ Module 01: Cloud Concepts & Engineering Trade-Offs
+# Module 1 – Cloud Concepts
 
-Welcome to **Module 01: Cloud Concepts** of my Azure Fundamentals portfolio. This module moves beyond basic theory to examine how core cloud principles—deployment architectures, service models, financial structures, and SLAs—are evaluated and implemented in real-world enterprise environments.
+## Overview
 
----
+This module introduces the fundamental concepts of cloud computing required for the Microsoft Azure Fundamentals (AZ-900) certification. It covers cloud deployment models, cloud service models, the shared responsibility model, pricing, and service level agreements (SLAs).
 
-## 🎯 Engineering Objectives
+## Learning Objectives
 
-In this module, I demonstrate and evaluate:
-* 🌐 **Architectural Selection:** Evaluating Public, Private, Hybrid, and Multicloud architectures based on data residency, network latency, and compliance constraints.
-* 📦 **Service Model Mapping:** Deciding between IaaS, PaaS, and SaaS to balance administrative overhead with operational control.
-* 🛡️ **Shared Responsibility Governance:** Mapping security boundaries between Microsoft Azure and customer operations.
-* 💰 **Financial Optimization:** Analyzing CapEx vs. OpEx models and conducting cost estimations using the Azure Pricing Calculator.
-* ⏱️ **Reliability Engineering:** Calculating composite SLAs and designing high-availability strategies for critical workloads.
+By completing this module, I will be able to:
 
----
+- Explain the benefits of cloud computing.
+- Differentiate between Public, Private, Hybrid, and Multicloud deployment models.
+- Explain Infrastructure as a Service (IaaS), Platform as a Service (PaaS), and Software as a Service (SaaS).
+- Describe the Shared Responsibility Model.
+- Understand Azure pricing models and Service Level Agreements (SLAs).
 
-## 📚 Module Labs & Progress
+## Labs
 
-| Lab | Title | Focused Engineering Scenario | Status |
-| :---: | :--- | :--- | :---: |
-| **Lab 01** | [Cloud Deployment Models](./Lab-01-Cloud-Deployment-Models.md) | Architectural evaluation and hybrid migration planning for legal client data. | 🟢 Completed |
-| **Lab 02** | [Cloud Service Models](./Lab-02-Cloud-Service-Models.md) | Mapping workload tiers (IaaS vs PaaS vs SaaS) for enterprise M365 & Azure environments. | ⬜ Pending |
-| **Lab 03** | [Shared Responsibility Model](./Lab-03-Shared-Responsibility-Model.md) | Security auditing and boundary mapping between Microsoft and enterprise operations. | ⬜ Pending |
-| **Lab 04** | [Azure Pricing and Consumption](./Lab-04-Azure-Pricing-and-Consumption.md) | Cost estimation, resource tagging, and budget guardrails via Azure Calculator. | ⬜ Pending |
-| **Lab 05** | [Azure Service Level Agreements](./Lab-05-Azure-Service-Level-Agreements.md) | Calculating composite uptime guarantees for multi-tier Azure solutions. | ⬜ Pending |
+| Lab | Title | Status |
+|------|-------|--------|
+| Lab 01 | Cloud Deployment Models | ✅ Completed |
+| Lab 02 | Cloud Service Models | 🚧 In Progress |
+| Lab 03 | Shared Responsibility Model | ⬜ Not Started |
+| Lab 04 | Azure Pricing and Consumption | ⬜ Not Started |
+| Lab 05 | Service Level Agreements (SLA) | ⬜ Not Started |
 
----
+## Skills Gained
 
-## 🔑 Architectural Reference
+- Cloud Computing Fundamentals
+- Cloud Deployment Models
+- Cloud Service Models
+- Azure Pricing Concepts
+- Shared Responsibility Model
+- Service Level Agreements
 
-```text
-Enterprise Cloud Framework
-├── Deployment Models
-│   ├── Public Cloud (Pay-as-you-go elasticity, shared hypervisor isolation)
-│   ├── Private Cloud (Single-tenant dedicated infrastructure, high compliance)
-│   ├── Hybrid Cloud (On-premises Active Directory/Data linked via IPsec VPN or ExpressRoute)
-│   └── Multicloud (Azure Entra ID identity backbone extended to multi-cloud platforms)
-└── Service Models
-    ├── IaaS (Azure VMs, VNets - Full OS & network control)
-    ├── PaaS (Azure App Service, Azure SQL - Reduced management overhead)
-    └── SaaS (Microsoft 365, Entra ID - Pure service consumption)
+## References
+
+- Microsoft Learn – Azure Fundamentals (AZ-900)
+- Microsoft Azure Documentation
