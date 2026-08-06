@@ -56,6 +56,17 @@ This allows businesses to rapidly deploy applications without investing heavily 
 
 ---
 
+
+# Cloud Computing Architecture Overview
+
+The following diagram illustrates how users consume cloud services through Microsoft Azure.
+
+![Cloud Computing Overview](./diagrams/cloud-computing-overview.png)
+
+The cloud provider manages the underlying physical infrastructure, while customers consume services such as compute, storage, networking, databases, and identity services based on their requirements.
+
+---
+
 # Essential Characteristics of Cloud Computing
 
 According to the National Institute of Standards and Technology (NIST), cloud computing has five essential characteristics.
