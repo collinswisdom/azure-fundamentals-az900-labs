@@ -44,18 +44,6 @@ In Microsoft Azure:
 The level of responsibility depends on the service model being used.
 
 
-## Services Used
-
-This lab focuses on cloud concepts rather than Azure implementation.
-
-Azure concepts discussed:
-
-- Microsoft Azure Regions
-- Azure Datacenters
-- Azure Virtual Machines
-- Azure App Services
-- Microsoft 365 Software Services
-
 
 ## Implementation Steps
 
