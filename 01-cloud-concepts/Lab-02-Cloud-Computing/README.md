@@ -45,7 +45,7 @@ The level of responsibility depends on the service model being used.
 
 The following diagram illustrates the relationship between cloud consumers, Microsoft Azure infrastructure, and the shared responsibility model:
 
-![Cloud Computing Overview](./diagram/cloud-computing-overview1.png)
+[Cloud Computing Overview](./diagram/cloud-computing-overview1.png)
 
 ## Implementation Steps
 
