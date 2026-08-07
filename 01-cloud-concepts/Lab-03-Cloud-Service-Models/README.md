@@ -40,7 +40,7 @@ As organizations move from IaaS to SaaS:
 
 The following diagram illustrates the responsibility differences between IaaS, PaaS, and SaaS:
 
-![Cloud Service Models](./diagrams/cloud-service-models.png)
+![Cloud Service Models](./diagrams/cloud-service-models3.png)
 
 
 ## Services Used
