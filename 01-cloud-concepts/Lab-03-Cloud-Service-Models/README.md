@@ -240,4 +240,3 @@ Understanding IaaS, PaaS, and SaaS is essential for designing secure, cost-effec
 
 Microsoft Azure Cloud Service Models:
 
-https://learn.microsoft.com/azure/cloud-adoption-framework/ready/considerations/service-models
