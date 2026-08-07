@@ -44,7 +44,7 @@ The hierarchy enables organizations to control:
 
 The following diagram illustrates the Azure resource hierarchy:
 
-![Azure Resource Hierarchy](./diagrams/azure-resource-hierarchy.png)
+![Azure Resource Hierarchy](./Diagrams/azure-resource-hierarchy.png)
 
 
 ## Services Used
