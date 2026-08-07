@@ -76,7 +76,7 @@ Organizations may use multi-cloud strategies for flexibility, risk reduction, or
 
 The following diagram illustrates different cloud deployment models:
 
-![Cloud Deployment Models](./diagrams/cloud-deployment-models.png)
+![Cloud Deployment Models](./diagrams/cloud-service-models4.png)
 
 
 ## Services Used
