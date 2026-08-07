@@ -43,7 +43,7 @@ Azure also provides region pairs that support disaster recovery strategies.
 
 The following diagram illustrates the relationship between Azure regions, availability zones, and region pairs:
 
-![Azure Regions and Availability Zones](./diagrams/Azure-Regions-and-Availability-Zones)
+![Azure Regions and Availability Zones](./diagrams/Azure-Regions-and-Availability-Zones.png)
 
 
 ## Services Used
