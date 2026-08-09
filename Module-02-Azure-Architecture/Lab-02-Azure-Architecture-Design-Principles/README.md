@@ -45,7 +45,7 @@ Architectural decisions should therefore be evaluated against business requireme
 
 The following diagram illustrates the five pillars used to evaluate Azure workloads:
 
-![Azure Architecture Design Principles](./diagrams/azure-architecture-design-principles.png)
+![Azure Architecture Design Principles](./diagram/azure-architecture-design-principles.png)
 
 
 ## Services Used
