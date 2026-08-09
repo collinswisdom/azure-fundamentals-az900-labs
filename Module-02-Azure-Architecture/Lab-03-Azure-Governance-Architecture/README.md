@@ -25,7 +25,7 @@ The objective is not to prevent teams from using Azure, but to establish appropr
 
 ## Learning Objectives
 
-By completing this lab, you will understand:
+By completing this lab, I understand:
 
 - The purpose of Azure governance
 - How management groups support governance at scale
