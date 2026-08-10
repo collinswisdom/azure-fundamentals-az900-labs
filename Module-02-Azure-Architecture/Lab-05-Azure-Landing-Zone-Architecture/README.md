@@ -50,7 +50,7 @@ The architecture typically includes:
 
 The following diagram illustrates an enterprise Azure Landing Zone architecture:
 
-![Azure Landing Zone Architecture](./diagrams/azure-landing-zone-architecture.png)
+![Azure Landing Zone Architecture](./diagram/azure-landing-zone-architecture.png)
 
 
 ## Services Used
