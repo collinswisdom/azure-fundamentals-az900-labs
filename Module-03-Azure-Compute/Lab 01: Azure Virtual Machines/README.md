@@ -46,7 +46,7 @@ By completing this lab, I will:
 
 The solution will use the following logical architecture:
 
-![Azure VM Infrastructure Architecture](./diagrams/azure-vm-infrastructure-architecture.png)
+![Azure VM Infrastructure Architecture](./Diagrams/azure-vm-infrastructure-architecture.png)
 
 ## Azure Resources
 
