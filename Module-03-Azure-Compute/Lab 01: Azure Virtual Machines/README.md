@@ -46,30 +46,7 @@ By completing this lab, I will:
 
 The solution will use the following logical architecture:
 
-```text
-Azure Subscription
-        │
-        ▼
-Resource Group
-        │
-        ▼
-Virtual Network
-10.10.0.0/16
-        │
-        ▼
-Application Subnet
-10.10.1.0/24
-        │
-        ├── Network Security Group
-        │
-        ▼
-Windows Virtual Machine
-        │
-        ▼
-Managed Disk
-```
-
----
+![Azure VM Infrastructure Architecture](./diagrams/azure-vm-infrastructure-architecture.png)
 
 ## Azure Resources
 
