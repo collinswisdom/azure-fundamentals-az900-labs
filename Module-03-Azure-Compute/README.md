@@ -1,75 +1,198 @@
-# Module 03 — Azure Compute
+# Lab 01 — Azure Virtual Machines
 
 ## Overview
 
-This module focuses on Azure compute services and the architectural decisions involved in selecting the appropriate compute model for different workloads.
+This lab demonstrates the deployment and architectural configuration of an Azure Virtual Machine within a controlled Azure network environment.
 
-The objective is not simply to understand individual Azure compute services, but to understand how cloud architects evaluate workload requirements, operational responsibility, scalability, availability, security, and cost when selecting a compute solution.
+The lab focuses on understanding how Azure Virtual Machines are designed, deployed, secured, and connected to supporting Azure resources.
 
----
-
-## Learning Objectives
-
-By completing this module, I will be able to:
-
-- Understand the major Azure compute options.
-- Identify when Azure Virtual Machines are appropriate.
-- Understand VM Scale Sets and horizontal scaling.
-- Understand Azure App Service and managed application hosting.
-- Understand container-based compute.
-- Understand serverless compute with Azure Functions.
-- Compare different Azure compute models.
-- Select an appropriate compute service based on workload requirements.
-- Consider security, availability, scalability, and cost when designing compute architectures.
+The objective is not simply to deploy a virtual machine, but to demonstrate the architectural decisions involved in designing a secure and manageable compute workload in Microsoft Azure.
 
 ---
 
-## Compute Models Covered
+## Business Scenario
 
-| Compute Model | Primary Use |
-|---|---|
-| Azure Virtual Machines | Full control over the operating system and server environment |
-| Virtual Machine Scale Sets | Scalable groups of virtual machines |
-| Azure App Service | Managed web applications and APIs |
-| Azure Container Services | Containerized workloads |
-| Azure Functions | Event-driven serverless workloads |
+A small organization has a legacy business application that currently runs on a Windows Server.
 
----
+The application requires:
 
-## Architectural Focus
+* Windows Server
+* Administrative control over the operating system
+* Custom software installation
+* Persistent storage
+* Controlled network access
+* Secure administrative access
 
-Throughout this module, the following architectural considerations will be evaluated:
-
-- Workload requirements
-- Control vs. management responsibility
-- Scalability
-- Availability
-- Security
-- Networking
-- Performance
-- Cost optimization
-- Operational overhead
-
-The goal is to develop the ability to answer:
-
-> **"Which Azure compute model is appropriate for this workload, and why?"**
+The organization wants to migrate this workload to Microsoft Azure while maintaining control over the server environment.
 
 ---
 
-## Labs
+## Objectives
 
-| Lab | Topic | Status |
-|---|---|---|
-| Lab 01 | Azure Virtual Machines | 🔄 In Progress |
-| Lab 02 | Virtual Machine Scale Sets | ⬜ Planned |
-| Lab 03 | Azure App Service | ⬜ Planned |
-| Lab 04 | Azure Container Services | ⬜ Planned |
-| Lab 05 | Azure Functions | ⬜ Planned |
-| Lab 06 | Compute Selection | ⬜ Planned |
-| Lab 07 | Compute Architecture Scenario | ⬜ Planned |
+By completing this lab, I will:
+
+* Deploy an Azure Virtual Machine.
+* Create a dedicated virtual network and subnet.
+* Configure network security using a Network Security Group.
+* Attach managed storage to the virtual machine.
+* Configure secure administrative access.
+* Validate connectivity to the virtual machine.
+* Document the architectural decisions made during deployment.
+* Evaluate security, availability, scalability, and cost considerations.
 
 ---
 
-## Architecture Principle
+## Target Architecture
 
-> **Choose the compute model based on workload requirements and the level of infrastructure control required — not simply because a service is available.**
+The solution will use the following logical architecture:
+
+```text
+Azure Subscription
+        │
+        ▼
+Resource Group
+        │
+        ▼
+Virtual Network
+10.10.0.0/16
+        │
+        ▼
+Application Subnet
+10.10.1.0/24
+        │
+        ├── Network Security Group
+        │
+        ▼
+Windows Virtual Machine
+        │
+        ▼
+Managed Disk
+```
+
+---
+
+## Azure Resources
+
+| Resource               | Purpose                                                      |
+| ---------------------- | ------------------------------------------------------------ |
+| Resource Group         | Provides a logical management boundary for the lab resources |
+| Virtual Network        | Provides network isolation for the workload                  |
+| Subnet                 | Segments the virtual network and hosts the VM                |
+| Network Security Group | Controls network traffic to and from the subnet/VM           |
+| Virtual Machine        | Provides compute capacity for the legacy application         |
+| Managed Disk           | Provides persistent storage for the VM                       |
+
+---
+
+## Architectural Considerations
+
+The architecture will consider the following:
+
+### Security
+
+* Restrict unnecessary inbound network access.
+* Use secure administrative access.
+* Apply network security controls using an NSG.
+* Avoid exposing the VM to the public internet unnecessarily.
+
+### Networking
+
+The virtual network will use:
+
+* Address space: `10.10.0.0/16`
+* Application subnet: `10.10.1.0/24`
+
+### Compute
+
+The VM will be selected based on the requirements of the workload rather than simply choosing the largest available size.
+
+### Storage
+
+Azure Managed Disks will provide persistent storage for the virtual machine.
+
+### Cost
+
+The VM size, disk configuration, and runtime duration will be considered as part of the overall cost of the solution.
+
+---
+
+## Implementation
+
+The implementation will be completed in the following stages:
+
+1. Create the resource group.
+2. Create the virtual network.
+3. Create the application subnet.
+4. Configure the Network Security Group.
+5. Deploy the Azure Virtual Machine.
+6. Configure managed storage.
+7. Configure secure administrative access.
+8. Test connectivity.
+9. Review the deployed architecture.
+10. Document findings and lessons learned.
+
+---
+
+## Validation
+
+The following areas will be validated after deployment:
+
+* VM deployment status
+* Network configuration
+* NSG configuration
+* Administrative connectivity
+* Storage configuration
+* Resource relationships
+* Security configuration
+
+---
+
+## Evidence
+
+Screenshots and architecture diagrams will be added after the implementation is completed.
+
+Planned evidence includes:
+
+* Azure resource group
+* Virtual network and subnet
+* Network Security Group
+* VM configuration
+* VM networking
+* Managed disk
+* Successful connectivity test
+* Final architecture diagram
+
+---
+
+## Architecture Decisions
+
+| Decision                         | Rationale                                            |
+| -------------------------------- | ---------------------------------------------------- |
+| Use Azure VM                     | The workload requires operating-system-level control |
+| Dedicated VNet                   | Provides network isolation                           |
+| Dedicated subnet                 | Provides workload segmentation                       |
+| NSG                              | Provides network traffic control                     |
+| Managed Disk                     | Provides persistent VM storage                       |
+| Controlled administrative access | Reduces unnecessary exposure of the VM               |
+
+---
+
+## Lessons Learned
+
+This section will be completed after the lab implementation.
+
+Key areas will include:
+
+* What was learned about Azure VM architecture.
+* Security considerations discovered during deployment.
+* Networking decisions and their impact.
+* Operational responsibilities associated with IaaS.
+* Potential improvements to the architecture.
+
+---
+
+## Conclusion
+
+This lab demonstrates the deployment of an Azure Virtual Machine as an Infrastructure-as-a-Service workload.
+
+The primary architectural lesson is that Azure Virtual Machines provide significant control over the operating system and infrastructure configuration, but that control also introduces additional operational and security responsibilities compared with more managed Azure compute services.
