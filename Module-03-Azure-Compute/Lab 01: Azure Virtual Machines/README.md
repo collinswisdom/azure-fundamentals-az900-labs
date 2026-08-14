@@ -12,18 +12,7 @@ The objective is not simply to deploy a virtual machine, but to demonstrate the 
 
 ## Business Scenario
 
-A small organization has a legacy business application that currently runs on a Windows Server.
-
-The application requires:
-
-* Windows Server
-* Administrative control over the operating system
-* Custom software installation
-* Persistent storage
-* Controlled network access
-* Secure administrative access
-
-The organization wants to migrate this workload to Microsoft Azure while maintaining control over the server environment.
+A small organization needs a Linux-based application server in Azure. The workload requires OS-level control, custom software installation, persistent storage, and controlled administrative access.
 
 ---
 
