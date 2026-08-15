@@ -2,12 +2,11 @@
 
 ## Overview
 
-This lab demonstrates the deployment and architectural configuration of an Azure Virtual Machine within a controlled Azure network environment.
+This lab demonstrates the deployment and architectural configuration of an Ubuntu-based Azure Virtual Machine within a controlled Azure network environment.
 
-The lab focuses on understanding how Azure Virtual Machines are designed, deployed, secured, and connected to supporting Azure resources.
+The lab focuses on understanding how Azure Virtual Machines are designed, deployed, secured, networked, and validated using supporting Azure resources.
 
-The objective is not simply to deploy a virtual machine, but to demonstrate the architectural decisions involved in designing a secure and manageable compute workload in Microsoft Azure.
-
+The objective is not simply to deploy a virtual machine, but to demonstrate the architectural decisions involved in designing a secure and manageable Infrastructure-as-a-Service (IaaS) workload in Microsoft Azure.
 ---
 
 ## Business Scenario
@@ -18,16 +17,15 @@ A small organization needs a Linux-based application server in Azure. The worklo
 
 ## Objectives
 
-By completing this lab, I will:
+By completing this lab, I demonstrated how to:
 
 * Deploy an Azure Virtual Machine.
 * Create a dedicated virtual network and subnet.
 * Configure network security using a Network Security Group.
-* Attach managed storage to the virtual machine.
-* Configure secure administrative access.
-* Validate connectivity to the virtual machine.
+* Configure secure SSH administrative access.
+* Validate network connectivity from the virtual machine.
 * Document the architectural decisions made during deployment.
-* Evaluate security, availability, scalability, and cost considerations.
+* Evaluate security, networking, availability, scalability, and cost considerations.
 
 ---
 
@@ -37,18 +35,32 @@ The solution will use the following logical architecture:
 
 ![Azure VM Infrastructure Architecture](./Diagrams/azure-vm-infrastructure-architecture.png)
 
+
 ## Azure Resources
 
-| Resource               | Purpose                                                      |
-| ---------------------- | ------------------------------------------------------------ |
-| Resource Group         | Provides a logical management boundary for the lab resources |
-| Virtual Network        | Provides network isolation for the workload                  |
-| Subnet                 | Segments the virtual network and hosts the VM                |
-| Network Security Group | Controls network traffic to and from the subnet/VM           |
-| Virtual Machine        | Provides compute capacity for the legacy application         |
-| Managed Disk           | Provides persistent storage for the VM                       |
+| Resource | Name | Configuration / Purpose |
+|---|---|---|
+| Resource Group | `rg-azure-vm-lab` | Logical management boundary for the lab resources |
+| Virtual Network | `vnet-vm-lab` | `10.10.0.0/16` network boundary |
+| Subnet | `snet-app` | `10.10.1.0/24` subnet hosting the VM |
+| Network Security Group | `nsg-vm-lab` | Controls inbound and outbound network traffic |
+| Virtual Machine | `vm-app-01` | Ubuntu-based IaaS compute workload |
+| Operating System | Ubuntu Server 24.04.4 LTS | Linux operating system for the VM |
+| Private IP | `10.10.1.4` | Private address assigned to the VM |
 
----
+## Virtual Machine Configuration
+
+| Setting | Configuration |
+|---|---|
+| VM name | `vm-app-01` |
+| Operating system | Ubuntu Server 24.04.4 LTS |
+| Architecture | x64 |
+| Authentication | SSH public key |
+| Administrator | `azureadmin` |
+| Private IP | `10.10.1.4` |
+| Subnet | `snet-app` |
+| VNet | `vnet-vm-lab` |
+| VM size | Standard_B2s |
 
 ## Architectural Considerations
 
@@ -56,10 +68,28 @@ The architecture will consider the following:
 
 ### Security
 
-* Restrict unnecessary inbound network access.
-* Use secure administrative access.
-* Apply network security controls using an NSG.
-* Avoid exposing the VM to the public internet unnecessarily.
+The VM is protected using a Network Security Group associated with the application subnet.
+
+The NSG is:
+
+`nsg-vm-lab`
+
+SSH administrative access is restricted using the following custom inbound rule:
+
+| Setting | Configuration |
+|---|---|
+| Rule name | `Allow-SSH-MyIP` |
+| Priority | `100` |
+| Source | Administrator public IP |
+| Source CIDR | `/32` |
+| Destination | Any |
+| Destination port | `22` |
+| Protocol | TCP |
+| Action | Allow |
+
+The `/32` CIDR restricts SSH access to a single source IPv4 address rather than allowing SSH access from the entire internet.
+
+SSH authentication uses an SSH public/private key pair rather than password authentication.
 
 ### Networking
 
@@ -67,6 +97,7 @@ The virtual network will use:
 
 * Address space: `10.10.0.0/16`
 * Application subnet: `10.10.1.0/24`
+* Network Security Group: `nsg-vm-lab`
 
 ### Compute
 
@@ -84,76 +115,152 @@ The VM size, disk configuration, and runtime duration will be considered as part
 
 ## Implementation
 
-The implementation will be completed in the following stages:
+The lab was implemented in the following stages:
 
-1. Create the resource group.
-2. Create the virtual network.
-3. Create the application subnet.
-4. Configure the Network Security Group.
-5. Deploy the Azure Virtual Machine.
-6. Configure managed storage.
-7. Configure secure administrative access.
-8. Test connectivity.
-9. Review the deployed architecture.
-10. Document findings and lessons learned.
+1. Created the resource group `rg-azure-vm-lab`.
+2. Created the virtual network `vnet-vm-lab` with address space `10.10.0.0/16`.
+3. Created the `snet-app` subnet using `10.10.1.0/24`.
+4. Created and associated the `nsg-vm-lab` Network Security Group with the subnet.
+5. Deployed the `vm-app-01` Ubuntu Server 24.04.4 LTS virtual machine.
+6. Configured SSH public-key authentication.
+7. Assigned a temporary Azure Public IP for administrative access.
+8. Restricted SSH access to the administrator's public IP using an NSG `/32` rule.
+9. Connected to the VM successfully using SSH from PowerShell.
+10. Validated the VM's operating system, hostname, private IP address, and network interface.
+11. Validated outbound connectivity using ICMP and HTTPS.
 
 ---
 
 ## Validation
 
-The following areas will be validated after deployment:
+The deployed VM was validated from an SSH session.
 
-* VM deployment status
-* Network configuration
-* NSG configuration
-* Administrative connectivity
-* Storage configuration
-* Resource relationships
-* Security configuration
+### Operating System
+
+The VM was confirmed to be running:
+
+`Ubuntu 24.04.4 LTS`
+
+### Hostname
+
+The VM hostname was confirmed as:
+
+`vm-app-01`
+
+### Private IP Address
+
+The VM was assigned:
+
+`10.10.1.4`
+
+The address belongs to the configured application subnet:
+
+`10.10.1.0/24`
+
+### Network Interface
+
+The `eth0` interface was confirmed to be operational with the private address `10.10.1.4/24`.
+
+### SSH Connectivity
+
+SSH access from the administrator's workstation was successfully established using SSH public-key authentication.
+
+### Outbound Connectivity
+
+ICMP connectivity was tested using:
+
+`ping -c 4 8.8.8.8`
+
+Result:
+
+* 4 packets transmitted
+* 4 packets received
+* 0% packet loss
+
+HTTPS connectivity was tested using:
+
+`curl -I https://www.microsoft.com`
+
+Result:
+
+`HTTP/2 200`
+
+These tests confirmed that the VM has functional outbound network connectivity.
 
 ---
 
 ## Evidence
 
-Screenshots and architecture diagrams will be added after the implementation is completed.
+## Evidence
 
-Planned evidence includes:
+Evidence collected during the implementation includes:
 
-* Azure resource group
-* Virtual network and subnet
-* Network Security Group
+* Azure resource group configuration
+* Virtual network and subnet configuration
+* Network Security Group configuration
 * VM configuration
-* VM networking
-* Managed disk
-* Successful connectivity test
-* Final architecture diagram
+* VM networking configuration
+* SSH security rule
+* Successful SSH connection
+* Ubuntu operating system verification
+* Private IP verification
+* Outbound connectivity tests
+* Azure VM architecture diagram
+
+Screenshots and the final architecture diagram are stored in the `Diagrams` directory and referenced from this README where appropriate.
 
 ---
 
 ## Architecture Decisions
 
-| Decision                         | Rationale                                            |
-| -------------------------------- | ---------------------------------------------------- |
-| Use Azure VM                     | The workload requires operating-system-level control |
-| Dedicated VNet                   | Provides network isolation                           |
-| Dedicated subnet                 | Provides workload segmentation                       |
-| NSG                              | Provides network traffic control                     |
-| Managed Disk                     | Provides persistent VM storage                       |
-| Controlled administrative access | Reduces unnecessary exposure of the VM               |
-
+| Decision | Rationale |
+|---|---|
+| Use Azure VM | The workload requires operating-system-level control and the ability to install and manage custom software. |
+| Dedicated VNet | Provides an isolated network boundary for the workload. |
+| `snet-app` subnet | Provides a dedicated network segment for the application VM. |
+| NSG at subnet level | Centralizes network access control for resources deployed in the subnet. |
+| SSH public-key authentication | Provides stronger administrative authentication than password-based access. |
+| Restrict SSH to administrator IP | Reduces exposure of the SSH management interface. |
+| Temporary Public IP | Provides administrative SSH connectivity for the lab while keeping the architecture simple. |
+| Standard_B2s VM size | Provides a small compute footprint appropriate for a learning environment while controlling cost. |
 ---
+
 
 ## Lessons Learned
 
-This section will be completed after the lab implementation.
+This lab demonstrated several important Azure IaaS and networking concepts.
 
-Key areas will include:
+### 1. Subnets must belong to the VNet address space
 
-* What was learned about Azure VM architecture.
-* Security considerations discovered during deployment.
-* Networking decisions and their impact.
-* Operational responsibilities associated with IaaS.
-* Potential improvements to the architecture.
+The VNet was configured with:
+
+`10.10.0.0/16`
+
+The application subnet:
+
+`10.10.1.0/24`
+
+was therefore valid because it falls within the VNet address space.
+
+### 2. NSGs control network access
+
+The `nsg-vm-lab` Network Security Group was associated with the application subnet and used to control inbound SSH access.
+
+### 3. SSH access should be restricted
+
+Rather than allowing SSH from any source, the custom `Allow-SSH-MyIP` rule restricts TCP port 22 to a single administrator IP using a `/32` CIDR.
+
+### 4. Private and public IP addresses serve different purposes
+
+The VM communicates internally using its private address:
+
+`10.10.1.4`
+
+A public IP was used to provide temporary external SSH access to the VM.
+
+### 5. IaaS requires operational responsibility
+
+Azure provides the underlying infrastructure, but the VM administrator remains responsible for operating-system configuration, access control, updates, security hardening, monitoring, and cost management.
 
 ---
 
