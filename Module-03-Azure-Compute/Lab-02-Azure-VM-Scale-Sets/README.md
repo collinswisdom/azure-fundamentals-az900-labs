@@ -1,560 +1,1110 @@
-# Lab 02 — Azure Virtual Machine Scale Sets
-
-## Overview
-
-This lab demonstrates the deployment and configuration of an Azure Virtual Machine Scale Set (VMSS) running Ubuntu Linux.
-
-The lab focuses on understanding how multiple virtual machine instances can be deployed as a scalable compute platform and placed behind an Azure Standard Load Balancer for high availability and traffic distribution.
-
-The environment was configured with:
-
-- Azure Virtual Machine Scale Set
-- Azure Virtual Network and subnet
-- Network Security Group
-- Azure Standard Load Balancer
-- Load Balancer frontend configuration
-- Backend address pool
-- Health probe
-- Load-balancing rule
-- Load Balancer outbound rule
-- Nginx web server
-- VMSS autoscaling
-
-The lab also includes connectivity testing and troubleshooting of outbound Internet access from the VMSS instances.
-
-## Objectives
-
-The objectives of this lab were to:
-
-1. Deploy an Azure Virtual Machine Scale Set.
-2. Configure a dedicated virtual network and subnet.
-3. Configure network security controls using an NSG.
-4. Configure autoscaling for the VMSS.
-5. Deploy an Azure Standard Load Balancer.
-6. Configure a backend pool for the VMSS instances.
-7. Configure a health probe to monitor backend availability.
-8. Configure a load-balancing rule for HTTP traffic.
-9. Configure outbound Internet connectivity for the VMSS instances.
-10. Install and configure Nginx on the VMSS instances.
-11. Validate traffic distribution across multiple VMSS instances.
-12. Troubleshoot and resolve outbound connectivity issues.
-
-## Architecture
-
-The lab uses an Azure Virtual Machine Scale Set behind an Azure Standard Load Balancer.
-
-Internet-facing traffic enters through the Load Balancer's public IP address. The Load Balancer uses a frontend configuration and load-balancing rule to forward traffic to healthy VMSS instances in the backend pool.
-
-Each VMSS instance runs Nginx and listens on TCP port 80.
-
-### Architecture Diagram
-
-![VMSS Architecture](./diagrams/architecture.png)
-
-## Resource Configuration
-
-The lab was deployed in the following Azure resource group:
-
-| Resource | Name | Configuration / Purpose |
-|---|---|---|
-| Resource Group | `rg-vmss-lab` | Contains the resources used for the VMSS lab |
-| Virtual Machine Scale Set | `vmss-app-lab` | Provides scalable Ubuntu Linux VM instances |
-| Virtual Network | `vnet-vmss-lab` | Provides the private network for the VMSS |
-| Subnet | `snet-app` | Hosts the VMSS instances |
-| Network Security Group | `nsg-vmss-lab` | Controls inbound and outbound network traffic |
-| Load Balancer | `lb-vmss-app` | Distributes inbound traffic across healthy VMSS instances |
-| Public IP | `lb-vmss-app-publicip` | Provides the public entry point to the Load Balancer |
-| Backend Pool | `bepool` | Contains the VMSS backend resources |
-| Health Probe | `lb-vmss-app-probe01` | Checks backend availability on TCP port 80 |
-| Load Balancing Rule | `lb-vmss-app-lbrule01` | Maps frontend TCP port 80 to backend TCP port 80 |
-| Outbound Rule | `outbound-vmss-internet` | Provides outbound Internet connectivity for VMSS instances |
-
-### Network Configuration
-
-| Component | Value |
-|---|---|
-| Virtual Network | `vnet-vmss-lab` |
-| Address Space | `10.10.0.0/16` |
-| Subnet | `snet-app` |
-| Subnet Address Range | `10.10.1.0/24` |
-| Network Security Group | `nsg-vmss-lab` |
-| NAT Gateway | None |
-
-### Load Balancer Configuration
-
-| Setting | Value |
-|---|---|
-| Name | `lb-vmss-app` |
-| SKU | Standard |
-| Frontend Configuration | `lb-vmss-app-frontendconfig01` |
-| Public IP | `lb-vmss-app-publicip` |
-| Backend Pool | `bepool` |
-| Load Balancing Rule | `lb-vmss-app-lbrule01` |
-| Frontend Port | 80 |
-| Backend Port | 80 |
-| Protocol | TCP |
-| Health Probe | `lb-vmss-app-probe01` |
-| Probe Protocol | TCP |
-| Probe Port | 80 |
-| Outbound Rule | `outbound-vmss-internet` |
-| Outbound Protocol | All |
-| Idle Timeout | 15 minutes |
-| TCP Reset | Enabled |
-
-## VMSS Configuration
-
-The Virtual Machine Scale Set was configured to deploy multiple Ubuntu Linux instances using a common VM configuration.
-
-| **Setting**            | **Value**               |
-| ---------------------- | ----------------------- |
-| VMSS Name              | `vmss-app-lab`          |
-| Operating System       | Ubuntu Server 24.04 LTS |
-| Image Generation       | Gen2                    |
-| VM Size                | Standard DS1 v2         |
-| vCPU                   | 1                       |
-| Memory                 | 3.5 GiB                 |
-| Initial Instance Count | 2                       |
-| Minimum Instances      | 2                       |
-| Maximum Instances      | 20                      |
-| Autoscaling            | Enabled                 |
-| Virtual Network        | `vnet-vmss-lab`         |
-| Subnet                 | `snet-app`              |
-
-The VMSS maintains multiple identical virtual machine instances. Each instance is attached to the VMSS backend pool used by the Azure Load Balancer.
-
-The initial deployment contained two instances, providing multiple backend targets for incoming HTTP traffic.
-
-This means the application does not depend on a single virtual machine.
-
-If one instance becomes unavailable, the Load Balancer can stop sending traffic to that unhealthy instance and continue routing requests to healthy instances.
+# Lab 02: Azure Virtual Machine Scale Sets (VMSS)
 
 ---
 
-## Autoscaling Configuration
+## 1. Overview
 
-Autoscaling was configured to allow the VMSS to automatically adjust the number of instances based on workload.
+Azure Virtual Machine Scale Sets (VMSS) allow you to deploy and manage a group of Azure virtual machines as a single scalable resource.
 
-The autoscaling configuration used CPU utilization as the scaling metric.
+A VM Scale Set can automatically increase or decrease the number of virtual machine instances based on workload demand.
 
-| **Setting**          | **Value**             |
-| -------------------- | --------------------- |
-| Autoscale Type       | Custom autoscale      |
-| Metric               | CPU                   |
-| Minimum Instances    | 2                     |
-| Default Instances    | 2                     |
-| Maximum Instances    | 20                    |
-| Predictive Autoscale | Disabled              |
-| Autoscale Profile    | `CPU-Based-Autoscale` |
+VMSS provides:
 
-The minimum instance count was configured as **2**, ensuring that the VMSS maintains at least two instances under normal operation.
+* Automatic scaling
+* High availability
+* Centralized management
+* Load balancing
+* Consistent VM configuration
+* Improved resource utilization
+* Cost optimization
 
-The maximum instance count was configured as **20**, preventing the autoscale mechanism from creating an unlimited number of virtual machines.
+VM Scale Sets are commonly used for:
 
-### Autoscaling Concept
-
-The VMSS can scale **out** when the workload increases and scale **in** when the workload decreases.
-
-```text
-                 Increased CPU Usage
-                        │
-                        ▼
-                ┌─────────────────┐
-                │ Autoscale Rules  │
-                └────────┬────────┘
-                         │
-                    Scale Out
-                         │
-                         ▼
-              ┌─────────────────────┐
-              │ Additional VMSS     │
-              │ Instances Created   │
-              └─────────────────────┘
-
-
-                 Reduced CPU Usage
-                        │
-                        ▼
-                ┌─────────────────┐
-                │ Autoscale Rules  │
-                └────────┬────────┘
-                         │
-                    Scale In
-                         │
-                         ▼
-              ┌─────────────────────┐
-              │ Excess Instances   │
-              │ Removed             │
-              └─────────────────────┘
-```
-
-Autoscaling therefore separates the application from a fixed number of compute instances.
+* Web applications
+* API services
+* Microservices
+* High-traffic applications
+* Distributed workloads
+* Applications requiring multiple identical VM instances
 
 ---
 
-## Nginx Web Server Configuration
+## 2. Lab Objective
 
-Nginx was installed on the VMSS instances to provide a web application endpoint on TCP port 80.
+By completing this lab, I learned how to:
 
-Nginx acts as the web server running inside each VMSS instance.
-
-The basic traffic path is:
-
-```text
-Internet
-   │
-   │ HTTP :80
-   ▼
-Azure Load Balancer
-   │
-   │ Backend Pool
-   ▼
-VMSS Instance
-   │
-   │ TCP :80
-   ▼
-Nginx
-   │
-   ▼
-HTTP Response
-```
-
-Nginx was configured to listen on port 80 so that the Load Balancer could forward incoming HTTP requests to the application instances.
-
-Because the VMSS instances use the same configuration, each instance can provide the same web service.
+* Create an Azure Virtual Machine Scale Set
+* Configure a Virtual Network and subnet
+* Deploy multiple VM instances
+* Configure autoscaling
+* Configure an Azure Load Balancer
+* Understand backend pools
+* Configure health probes
+* Configure load-balancing rules
+* Install and configure Nginx on VMSS instances
+* Test traffic distribution between VM instances
+* Understand how VMSS improves scalability and availability
+* Validate connectivity and outbound internet access
 
 ---
 
-## Load Balancer Traffic Flow
+# 3. Lab Architecture
 
-The Azure Standard Load Balancer provides the public entry point for the application.
+The completed environment consists of:
 
-The Load Balancer uses the following components:
+1. Azure Virtual Machine Scale Set
+2. Two Ubuntu Linux VM instances
+3. Azure Virtual Network
+4. Application subnet
+5. Azure Load Balancer
+6. Public IP address
+7. Backend pool
+8. Health probe
+9. Load-balancing rule
+10. Autoscale configuration
+11. Nginx web server
 
-1. **Frontend configuration** — receives traffic through the public IP.
-2. **Load-balancing rule** — maps frontend TCP port 80 to backend TCP port 80.
-3. **Backend pool** — contains the VMSS instances.
-4. **Health probe** — determines whether backend instances are available.
-5. **Outbound rule** — provides outbound Internet connectivity for the VMSS instances.
-
-The resulting traffic flow is:
+### Architecture Flow
 
 ```text
                          INTERNET
-                            │
-                            │ HTTP :80
-                            ▼
-                 ┌─────────────────────┐
-                 │ Azure Load Balancer  │
-                 │     Public IP        │
-                 │                      │
-                 │ Frontend :80         │
-                 └──────────┬──────────┘
-                            │
-                    Load Balancing Rule
-                            │
-                            ▼
-                     Backend Pool
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-              ▼                           ▼
-       ┌──────────────┐            ┌──────────────┐
-       │ VMSS Instance│            │ VMSS Instance│
-       │      1       │            │      2       │
-       │              │            │              │
-       │ Nginx :80    │            │ Nginx :80    │
-       └──────────────┘            └──────────────┘
-              │                           │
-              └─────────────┬─────────────┘
-                            │
-                       HTTP Response
+                            |
+                            | HTTP :80
+                            v
+                 +-----------------------+
+                 |   Azure Load Balancer |
+                 |      Public IP        |
+                 +-----------+-----------+
+                             |
+                 +-----------+-----------+
+                 |                       |
+          Health Probe              Load Balancing
+          TCP :80                   Rule HTTP :80
+                 |                       |
+                 +-----------+-----------+
+                             |
+                       Backend Pool
+                             |
+                +------------+------------+
+                |                         |
+                v                         v
+        +---------------+         +---------------+
+        | VMSS Instance |         | VMSS Instance |
+        |       0       |         |       1       |
+        |    Nginx      |         |    Nginx      |
+        +-------+-------+         +-------+-------+
+                |                         |
+                +------------+------------+
+                             |
+                    vnet-vmss-lab
+                             |
+                         snet-app
 ```
 
-The Load Balancer does not itself run the web application.
+### Architecture Diagram
 
-Instead, it determines which healthy backend instance should receive each connection.
+![Azure VMSS Architecture](./diagrams/architecture.png)
+
+---
+
+# 4. Lab Scenario
+
+A company is hosting a web application that experiences variable traffic.
+
+During normal operating conditions, the application requires a minimum of two virtual machine instances.
+
+When traffic increases, additional instances should be created automatically.
+
+When traffic decreases, unnecessary instances should be removed to reduce resource consumption.
+
+The application also needs a load balancer so that incoming HTTP traffic can be distributed across healthy VM instances.
+
+This lab demonstrates how Azure VMSS, Azure Load Balancer, health probes, and autoscaling work together to provide a scalable application platform.
+
+---
+
+# 5. Resource Configuration
+
+## Resource Group
+
+```text
+rg-vmss-lab
+```
+
+The resource group contains the resources created for this lab.
+
+![Resource Group](./diagrams/00-resource-group.png)
+
+---
+
+## Virtual Machine Scale Set
+
+```text
+vmss-app-lab
+```
+
+### Configuration
+
+| Setting              | Value                          |
+| -------------------- | ------------------------------ |
+| VMSS Name            | `vmss-app-lab`                 |
+| Operating System     | Ubuntu Server 24.04 LTS - Gen2 |
+| VM Size              | Standard DS1 v2                |
+| vCPU                 | 1                              |
+| Memory               | 3.5 GiB                        |
+| Initial Instances    | 2                              |
+| Minimum Instances    | 2                              |
+| Maximum Instances    | 20                             |
+| Autoscaling          | Enabled                        |
+| Predictive Autoscale | Disabled                       |
+
+![VMSS Overview](./diagrams/01-vmss-overview.png)
+
+---
+
+# 6. VMSS Instances
+
+The VM Scale Set initially contains two instances.
+
+```text
+vmss-app-lab
+│
+├── Instance 0
+└── Instance 1
+```
+
+![VMSS Instances](./diagrams/02-vmss-instances.png)
+
+Each instance is independently running the Ubuntu operating system and Nginx web server.
+
+The instances are managed collectively by the VM Scale Set.
+
+---
+
+# 7. Networking
+
+The VMSS is connected to an Azure Virtual Network.
+
+## Virtual Network
+
+```text
+vnet-vmss-lab
+```
+
+## Subnet
+
+```text
+snet-app
+```
+
+The subnet provides the network segment where the VMSS instances are deployed.
+
+![VMSS Networking](./diagrams/03-vmss-networking.png)
+
+---
+
+# 8. Azure Load Balancer
+
+An Azure Load Balancer was configured to distribute incoming HTTP traffic across the VMSS instances.
+
+## Load Balancer
+
+```text
+lb-vmss-app
+```
+
+### Configuration
+
+| Setting          | Value                          |
+| ---------------- | ------------------------------ |
+| Name             | `lb-vmss-app`                  |
+| SKU              | Standard                       |
+| Frontend         | `lb-vmss-app-frontendconfig01` |
+| Public IP        | `lb-vmss-app-publicip`         |
+| Backend Pool     | `bepool`                       |
+| Protocol         | TCP                            |
+| Application Port | 80                             |
+
+![Load Balancer Overview](./diagrams/06-load-balancer-overview.png)
+
+---
+
+# 9. Frontend IP Configuration
+
+The frontend IP represents the public-facing side of the Azure Load Balancer.
+
+Internet clients connect to the public IP address.
+
+```text
+Internet
+    |
+    v
+Public IP
+    |
+    v
+Azure Load Balancer
+```
+
+The frontend configuration used in this lab is:
+
+```text
+lb-vmss-app-frontendconfig01
+```
+
+![Frontend IP](./diagrams/07-frontend-ip.png)
+
+---
+
+# 10. Backend Pool
+
+The backend pool contains the VMSS instances that receive traffic from the Load Balancer.
+
+```text
+Azure Load Balancer
+        |
+        v
+   Backend Pool
+      bepool
+      /    \
+     /      \
+Instance 0  Instance 1
+```
+
+The backend pool allows the Load Balancer to distribute incoming connections between the available VMSS instances.
+
+![Backend Pool](./diagrams/08-backend-pool.png)
+
+---
+
+# 11. Health Probe
+
+The Load Balancer uses a health probe to determine whether backend instances are available to receive traffic.
+
+The configured probe checks TCP port 80.
+
+```text
+Health Probe
+     |
+     +----> VMSS Instance 0 :80
+     |
+     +----> VMSS Instance 1 :80
+```
+
+If an instance stops responding on the configured probe, the Load Balancer can stop sending new traffic to that instance.
+
+This prevents traffic from being intentionally distributed to an unhealthy backend.
+
+![Health Probe](./diagrams/09-health-probe.png)
+
+---
+
+# 12. Load-Balancing Rule
+
+The HTTP load-balancing rule connects the public-facing frontend to the backend pool.
+
+### Configuration
+
+```text
+Protocol: TCP
+Frontend Port: 80
+Backend Port: 80
+Backend Pool: bepool
+Health Probe: HTTP/TCP port 80
+```
+
+Traffic flow:
+
+```text
+Client
+  |
+  | HTTP :80
+  v
+Load Balancer Public IP
+  |
+  v
+Frontend IP
+  |
+  v
+Load Balancing Rule
+  |
+  v
+Backend Pool
+  |
+  +----------+
+  |          |
+  v          v
+VMSS 0     VMSS 1
+  |          |
+  +----------+
+       |
+     Nginx
+       |
+     :80
+```
+
+![Load Balancing Rule](./diagrams/10-load-balancing-rule.png)
+
+---
+
+# 13. Load Balancer Connection Settings
+
+The Load Balancer was configured with:
+
+```text
+Idle timeout: 15 minutes
+TCP Reset: Disabled
+Floating IP: Disabled
+```
+
+The 15-minute idle timeout determines how long an idle connection can remain established before the Load Balancer removes the connection state.
+
+TCP Reset and Floating IP were not enabled for this lab.
+
+---
+
+# 14. Autoscaling
+
+Autoscaling allows the VMSS to automatically adjust the number of instances based on workload conditions.
+
+The VMSS was configured with:
+
+```text
+Minimum instances: 2
+Maximum instances: 20
+Default instances: 2
+Predictive autoscale: Disabled
+```
+
+The autoscale configuration uses CPU-based scaling.
+
+![Autoscale Overview](./diagrams/04-autoscale-overview.png)
+
+---
+
+# 15. CPU-Based Autoscale
+
+A CPU-based autoscale condition was configured for the VMSS.
+
+The general concept is:
+
+```text
+CPU Utilization
+       |
+       v
+Autoscale Evaluation
+       |
+       +----------------+
+       |                |
+   High CPU          Low CPU
+       |                |
+       v                v
+Scale Out          Scale In
+       |                |
+       v                v
+More VM Instances   Fewer VM Instances
+```
+
+The configured autoscale condition was named:
+
+```text
+CPU-Based-Autoscale
+```
+
+![Autoscale Rule](./diagrams/05-autoscale-rule.png)
+
+---
+
+# 16. Why the Maximum Instance Count Is 20
+
+The autoscale configuration displayed a maximum instance count of:
+
+```text
+20
+```
+
+This means the VM Scale Set is permitted to scale out to a maximum of 20 instances under the configured autoscale settings.
+
+The maximum value does **not** mean that 20 VMs are currently running.
+
+The current instance count remained:
+
+```text
+2
+```
+
+The distinction is:
+
+```text
+Minimum = 2
+Current  = 2
+Maximum  = 20
+```
+
+Therefore:
+
+* Azure maintains at least 2 instances.
+* The VMSS currently has 2 instances.
+* Autoscaling may create additional instances when scaling conditions are met.
+* Azure will not exceed the configured maximum of 20 instances.
+
+---
+
+# 17. Nginx Web Server
+
+Nginx was installed on the VMSS instances to provide a simple HTTP web service.
+
+Nginx listens on:
+
+```text
+TCP :80
+```
+
+This makes it possible to test the Azure Load Balancer by sending HTTP requests to the public IP.
+
+Each VMSS instance was given a distinguishable response so that traffic distribution could be observed.
+
+For example:
+
+```text
+VMSS Instance 0
+```
+
+and:
+
+```text
+VMSS Instance 1
+```
+
+This allows us to identify which backend instance responded to each request.
+
+---
+
+# 18. Testing Load Balancer Traffic Distribution
+
+Requests were sent repeatedly to the Load Balancer public IP.
+
+The responses demonstrated that requests could be served by different VMSS instances.
+
+Conceptually:
+
+```text
+Request 1
+   |
+   v
+Load Balancer
+   |
+   v
+Instance 0
+```
+
+Then:
+
+```text
+Request 2
+   |
+   v
+Load Balancer
+   |
+   v
+Instance 1
+```
+
+The response from the Nginx test confirmed that traffic was reaching the VMSS backend instances.
+
+![Nginx Load Balancer Test](./diagrams/12-nginx-test.png)
+
+---
+
+# 19. Connectivity Testing
+
+Connectivity was also tested from the VMSS environment.
+
+Internet connectivity was verified using:
+
+```bash
+ping 8.8.8.8
+```
+
+The web connectivity test was performed using:
+
+```bash
+curl https://www.microsoft.com
+```
+
+The successful response demonstrated outbound internet connectivity from the VM.
+
+
+
+---
+
+# 20. Outbound Connectivity
+
+An outbound rule was also examined/configured for the Load Balancer environment.
+
+The purpose of outbound connectivity is to allow backend instances to establish connections to external destinations when required.
+
+Conceptually:
+
+```text
+VMSS Instance
+     |
+     v
+Azure Load Balancer
+     |
+     v
+Outbound Connectivity
+     |
+     v
+Internet
+```
+
+![Outbound Rule](./diagrams/11-outbound-rule.png)
+
+---
+
+# 21. Important VMSS Concepts Learned
+
+## VM Scale Set
+
+A VMSS is a resource that allows Azure to manage multiple identical virtual machine instances as a group.
+
+---
+
+## Instance
+
+An instance is an individual virtual machine within the VM Scale Set.
+
+For this lab:
+
+```text
+Instance 0
+Instance 1
+```
+
+---
+
+## Backend Pool
+
+The backend pool identifies the VM instances that can receive traffic from the Load Balancer.
+
+```text
+Load Balancer
+      |
+      v
+ Backend Pool
+    /     \
+   v       v
+ VM 0     VM 1
+```
 
 ---
 
 ## Health Probe
 
-The Load Balancer health probe was configured to use TCP port 80.
-
-| **Setting**     | **Value**             |
-| --------------- | --------------------- |
-| Probe Name      | `lb-vmss-app-probe01` |
-| Protocol        | TCP                   |
-| Port            | 80                    |
-| Backend Service | Nginx                 |
-
-The health probe periodically checks whether the backend instance is accepting connections on TCP port 80.
-
-Conceptually:
+The health probe determines whether a backend instance is healthy enough to receive traffic.
 
 ```text
-Load Balancer
-      │
-      │ TCP :80 Health Probe
-      ▼
-VMSS Instance
-      │
-      ▼
-Nginx :80
+Probe
+  |
+  +----> VM 0 :80
+  |
+  +----> VM 1 :80
 ```
-
-If the instance responds successfully, the Load Balancer considers the backend available.
-
-If the probe fails according to the configured health-probe thresholds, the instance can be removed from the set of healthy backends used for load balancing.
-
-This is important because **the Load Balancer does not simply send traffic to every VMSS instance**.
-
-It sends traffic to instances that are considered healthy.
 
 ---
 
-## Connectivity Testing
+## Load-Balancing Rule
 
-The lab included testing of both inbound application traffic and outbound Internet connectivity.
-
-### Inbound Application Testing
-
-The Load Balancer public IP was used as the entry point for HTTP traffic.
-
-A request to:
+The load-balancing rule determines how incoming traffic is mapped from the frontend to the backend.
 
 ```text
-http://<Load-Balancer-Public-IP>
+Frontend :80
+     |
+     v
+Backend Pool :80
 ```
 
-is processed through the Load Balancer and forwarded to a healthy VMSS instance running Nginx.
+---
 
-The expected flow is:
+## Autoscale
+
+Autoscale changes the number of VMSS instances according to configured scaling conditions.
 
 ```text
-Client
-  │
-  │ HTTP :80
-  ▼
-Public Load Balancer
-  │
-  ▼
-Healthy VMSS Instance
-  │
-  ▼
+Demand increases
+       |
+       v
+Scale Out
+       |
+       v
+More VM Instances
+```
+
+and:
+
+```text
+Demand decreases
+       |
+       v
+Scale In
+       |
+       v
+Fewer VM Instances
+```
+
+---
+
+# 22. How the Components Work Together
+
+The most important concept from this lab is understanding that the individual Azure services are not operating independently.
+
+They form a complete application architecture.
+
+### Step 1 — User Sends Request
+
+A user accesses the application's public IP address using HTTP.
+
+```text
+User
+ |
+ | HTTP :80
+ v
+Public IP
+```
+
+### Step 2 — Load Balancer Receives Request
+
+The Azure Load Balancer receives the request through its frontend IP configuration.
+
+```text
+Public IP
+    |
+    v
+Azure Load Balancer
+```
+
+### Step 3 — Load Balancer Checks Backend Health
+
+The health probe checks whether backend instances are available.
+
+```text
+Health Probe
+     |
+     +----> VM 0
+     |
+     +----> VM 1
+```
+
+### Step 4 — Traffic Is Sent to a Healthy Backend
+
+The load-balancing rule sends traffic to an available backend instance.
+
+```text
+Load Balancer
+      |
+      v
+Backend Pool
+      |
+   +--+--+
+   |     |
+   v     v
+ VM 0   VM 1
+```
+
+### Step 5 — Nginx Processes the Request
+
+The selected VM receives the HTTP request on port 80.
+
+Nginx processes the request and returns a response.
+
+### Step 6 — VMSS Provides Scalability
+
+If workload increases and the autoscale condition is triggered, Azure can add additional VM instances.
+
+```text
+2 Instances
+     |
+     | High CPU
+     v
+Scale Out
+     |
+     v
+More Instances
+```
+
+When demand decreases, Azure can scale the number of instances back down while respecting the configured minimum.
+
+---
+
+# 23. Useful Azure CLI Commands
+
+The following commands were used to inspect the Azure environment.
+
+### List Virtual Networks
+
+```bash
+az network vnet list
+```
+
+### List Subnets
+
+```bash
+az network vnet subnet list
+```
+
+### List NSG Rules
+
+```bash
+az network nsg rule list
+```
+
+### Show VMSS Configuration
+
+```bash
+az vmss show \
+  --resource-group rg-vmss-lab \
+  --name vmss-app-lab
+```
+
+### Show Load Balancer
+
+```bash
+az network lb show \
+  --resource-group rg-vmss-lab \
+  --name lb-vmss-app
+```
+
+### List Backend Pools
+
+```bash
+az network lb address-pool list \
+  --resource-group rg-vmss-lab \
+  --lb-name lb-vmss-app
+```
+
+### List Frontend IP Configurations
+
+```bash
+az network lb frontend-ip list \
+  --resource-group rg-vmss-lab \
+  --lb-name lb-vmss-app
+```
+
+### Create/Inspect Outbound Rule
+
+```bash
+az network lb outbound-rule create
+```
+
+---
+
+# 24. Validation Checklist
+
+The following items were validated during the lab:
+
+* [x] Resource group created
+* [x] Virtual Network created
+* [x] Application subnet created
+* [x] VM Scale Set created
+* [x] Ubuntu VMSS instances deployed
+* [x] Minimum instance count configured
+* [x] Maximum instance count configured
+* [x] Autoscale configured
+* [x] Predictive autoscale disabled
+* [x] Azure Load Balancer created
+* [x] Public frontend configured
+* [x] Backend pool configured
+* [x] Health probe configured
+* [x] HTTP load-balancing rule configured
+* [x] Nginx installed
+* [x] HTTP traffic tested
+* [x] Traffic reached multiple VMSS instances
+* [x] Outbound connectivity tested
+* [x] Azure CLI configuration inspected
+
+---
+
+# 25. Troubleshooting Performed
+
+During the lab, several Azure concepts were investigated to understand how the architecture behaves.
+
+### Health Probe vs Backend Pool
+
+The backend pool identifies **where traffic can go**.
+
+The health probe determines **which backend instances are healthy enough to receive traffic**.
+
+Therefore:
+
+```text
+Backend Pool
+    =
+Potential destinations
+```
+
+while:
+
+```text
+Health Probe
+    =
+Health verification
+```
+
+---
+
+### Load Balancer vs VMSS
+
+VMSS manages the virtual machine instances.
+
+The Load Balancer distributes incoming traffic across those instances.
+
+```text
+VMSS
+ |
+ +-- VM 0
+ +-- VM 1
+ +-- VM 2
+```
+
+while:
+
+```text
+Load Balancer
+ |
+ +---> VM 0
+ +---> VM 1
+ +---> VM 2
+```
+
+The two services therefore perform different but complementary functions.
+
+---
+
+# 26. Key Lessons Learned
+
+This lab demonstrated several important Azure architecture principles.
+
+### 1. Scalability
+
+VMSS allows applications to scale horizontally by adding more VM instances.
+
+### 2. Availability
+
+Having multiple VM instances means the application does not depend on a single VM.
+
+### 3. Load Distribution
+
+Azure Load Balancer distributes incoming traffic across backend instances.
+
+### 4. Health-Based Routing
+
+The health probe prevents the Load Balancer from intentionally sending new traffic to an unhealthy backend.
+
+### 5. Automation
+
+Autoscale allows Azure to respond automatically to changes in workload demand.
+
+### 6. Separation of Responsibilities
+
+Each Azure component has a specific role:
+
+```text
+VMSS
+ |
+ +-- Manages VM instances
+ |
+Load Balancer
+ |
+ +-- Distributes traffic
+ |
+Health Probe
+ |
+ +-- Checks backend health
+ |
+Autoscale
+ |
+ +-- Adjusts instance count
+ |
 Nginx
-  │
-  ▼
+ |
+ +-- Serves web content
+```
+
+---
+
+# 27. Final Architecture Summary
+
+The completed lab demonstrates a basic highly available and scalable web application architecture in Azure.
+
+```text
+                         INTERNET
+                            |
+                            | HTTP :80
+                            v
+                +-------------------------+
+                |   Azure Load Balancer   |
+                |       lb-vmss-app       |
+                +-----------+-------------+
+                            |
+                       Frontend IP
+                            |
+                     Load Balancing
+                         Rule :80
+                            |
+                       Backend Pool
+                         bepool
+                       /         \
+                      /           \
+                     v             v
+             +-------------+ +-------------+
+             | VMSS        | | VMSS        |
+             | Instance 0  | | Instance 1  |
+             | Nginx       | | Nginx       |
+             | Port 80     | | Port 80     |
+             +------+------+ +------+------+
+                    \              /
+                     \            /
+                      +----------+
+                           |
+                    vnet-vmss-lab
+                           |
+                       snet-app
+
+                  Autoscale monitors
+                    workload/CPU
+                           |
+              +------------+------------+
+              |                         |
+          Scale Out                  Scale In
+              |                         |
+        More Instances             Fewer Instances
+```
+
+The overall request flow is:
+
+```text
+User
+  ↓
+Public IP
+  ↓
+Azure Load Balancer
+  ↓
+Health Probe
+  ↓
+Backend Pool
+  ↓
+Healthy VMSS Instance
+  ↓
+Nginx
+  ↓
 HTTP Response
 ```
 
-### Backend Validation
-
-The VMSS instances were also checked individually to confirm that Nginx was running and listening on TCP port 80.
-
-This helped separate application-level problems from Load Balancer problems.
-
-For example:
-
-* If Nginx is not running, the health probe can fail.
-* If the NSG blocks required traffic, connectivity can fail.
-* If the Load Balancer rule is incorrect, frontend requests may not reach the backend.
-* If the backend is healthy but outbound connectivity is unavailable, the problem is related to the outbound path rather than inbound load balancing.
-
----
-
-## Outbound Internet Connectivity
-
-During the lab, outbound Internet connectivity from the VMSS instances required additional configuration.
-
-This demonstrated an important Azure networking concept:
-
-> **Inbound connectivity and outbound connectivity are separate traffic paths.**
-
-The public Load Balancer was configured with an outbound rule:
+The overall scaling flow is:
 
 ```text
-outbound-vmss-internet
+Workload
+   ↓
+CPU Metric
+   ↓
+Autoscale
+   ↓
+Scale Out / Scale In
+   ↓
+VMSS Instance Count Changes
 ```
 
-The outbound rule provides SNAT-based Internet connectivity for the VMSS backend instances.
+This lab therefore demonstrates how **Azure Virtual Machine Scale Sets, Azure Load Balancer, health probes, autoscaling, networking, and Nginx can work together to create a scalable web application architecture.**
 
-The resulting outbound path is conceptually:
+---
+
+# 28. Lab Evidence
+
+The following screenshots document the configuration and validation performed during the lab.
+
+| #  | Evidence               | Screenshot                      |
+| -- | ---------------------- | ------------------------------- |
+| 1  | Resource Group         | `00-resource-group.png`         |
+| 2  | VMSS Overview          | `01-vmss-overview.png`          |
+| 3  | VMSS Instances         | `02-vmss-instances.png`         |
+| 4  | VMSS Networking        | `03-vmss-networking.png`        |
+| 5  | Autoscale Overview     | `04-autoscale-overview.png`     |
+| 6  | Autoscale Rule         | `05-autoscale-rule.png`         |
+| 7  | Load Balancer Overview | `06-load-balancer-overview.png` |
+| 8  | Frontend IP            | `07-frontend-ip.png`            |
+| 9  | Backend Pool           | `08-backend-pool.png`           |
+| 10 | Health Probe           | `09-health-probe.png`           |
+| 11 | Load-Balancing Rule    | `10-load-balancing-rule.png`    |
+| 12 | Outbound Rule          | `11-outbound-rule.png`          |
+| 13 | Nginx Traffic Test     | `12-nginx-test.png`             |
+| 14 | Connectivity Test      | `13-connectivity-test.png`      |
+| 15 | Architecture           | `architecture.png`              |
+
+All screenshots are stored in:
 
 ```text
-VMSS Instance
-      │
-      │ Outbound Connection
-      ▼
-Backend Pool
-      │
-      ▼
-Load Balancer Outbound Rule
-      │
-      ▼
-Public IP
-      │
-      ▼
-Internet
-```
-
-This was required because the VMSS subnet did not use a NAT Gateway.
-
----
-
-## Troubleshooting Outbound Connectivity
-
-The lab demonstrated that successful inbound access through a Load Balancer does not automatically prove that the VMSS instances have working outbound Internet connectivity.
-
-Outbound connectivity was tested from the Linux VMSS instances.
-
-Testing included connectivity to an external Internet address.
-
-The troubleshooting process involved checking:
-
-1. VMSS instance network configuration.
-2. Subnet configuration.
-3. Network Security Group rules.
-4. Load Balancer configuration.
-5. Backend pool membership.
-6. Outbound rule configuration.
-7. Public IP association.
-8. Instance-level Internet connectivity.
-
-After the outbound configuration was corrected, the VMSS instances were able to establish outbound Internet connections.
-
-This troubleshooting exercise was important because it demonstrated that Azure networking problems should be investigated by following the traffic path rather than assuming that one working direction means all network connectivity is working.
-
----
-
-## Validation
-
-The final environment was validated by confirming the following:
-
-| **Validation**                   | **Expected Result** |
-| -------------------------------- | ------------------- |
-| VMSS deployed                    | Successful          |
-| Minimum instances                | 2                   |
-| VMSS instances running           | Successful          |
-| VMSS attached to subnet          | Successful          |
-| Backend pool populated           | Successful          |
-| Health probe configured          | TCP :80             |
-| Nginx installed                  | Successful          |
-| Nginx listening on :80           | Successful          |
-| Load Balancer frontend available | Successful          |
-| HTTP load-balancing rule         | TCP :80 → TCP :80   |
-| Inbound HTTP traffic             | Successful          |
-| Outbound Internet connectivity   | Successful          |
-| Autoscale configuration          | Enabled             |
-| Maximum VMSS instances           | 20                  |
-
----
-
-## Key Concepts Demonstrated
-
-This lab demonstrated several important Azure compute and networking concepts.
-
-### 1. Virtual Machine Scale Sets
-
-A VMSS allows Azure to manage multiple VM instances as a single scalable compute resource.
-
-Instead of manually creating and managing individual virtual machines, the VMSS maintains instances using a common configuration.
-
-### 2. Load Balancing
-
-The Azure Load Balancer distributes incoming connections across backend VMSS instances.
-
-This reduces dependence on a single server and allows the application to continue operating when multiple healthy instances are available.
-
-### 3. Health Probes
-
-Health probes allow the Load Balancer to determine which backend instances are available to receive traffic.
-
-### 4. Autoscaling
-
-Autoscaling allows the number of VMSS instances to change according to workload conditions.
-
-### 5. Network Security Groups
-
-The NSG provides network-level traffic filtering for the environment.
-
-### 6. Outbound Connectivity
-
-The lab demonstrated that outbound Internet access must be considered independently from inbound application traffic.
-
-### 7. Nginx
-
-Nginx provides the HTTP service running on each VMSS instance.
-
-### 8. Separation of Responsibilities
-
-The architecture separates responsibilities between services:
-
-```text
-Load Balancer
-    │
-    ├── Public entry point
-    ├── Traffic distribution
-    ├── Health checking
-    └── Outbound connectivity
-             │
-             ▼
-          VMSS
-             │
-             ├── Compute instances
-             ├── Scaling
-             └── Instance management
-                     │
-                     ▼
-                   Nginx
-                     │
-                     └── HTTP application service
+./diagrams/
 ```
 
 ---
 
-## Lessons Learned
+# 29. Lab Status
 
-The lab demonstrated that deploying a scalable application environment involves more than simply creating multiple virtual machines.
+**Status:** Completed
 
-The major architectural relationships were:
+**Platform:** Microsoft Azure
+
+**Course:** Microsoft Azure Fundamentals (AZ-900)
+
+**Module:** Module 3 — Azure Compute
+
+**Lab:** Lab 03 — Azure Virtual Machine Scale Sets
+
+**Primary Services Used:**
+
+* Azure Virtual Machine Scale Sets
+* Azure Virtual Machines
+* Azure Virtual Network
+* Azure Subnet
+* Azure Load Balancer
+* Azure Public IP
+* Azure Autoscale
+* Azure Health Probe
+* Nginx
+
+---
+
+## Conclusion
+
+This lab provided practical experience with Azure Virtual Machine Scale Sets and demonstrated how multiple Azure services can be combined to build a scalable and highly available application environment.
+
+The most important architectural relationship to remember is:
 
 ```text
-Internet
-   │
-   ▼
-Public IP
-   │
-   ▼
+VMSS
+  |
+  | manages
+  v
+VM Instances
+  |
+  | receive traffic through
+  v
 Azure Load Balancer
-   │
-   ├── Health Probe
-   ├── Load-Balancing Rule
-   └── Outbound Rule
-   │
-   ▼
-VMSS Backend Pool
-   │
-   ├── VMSS Instance 1
-   ├── VMSS Instance 2
-   └── Additional Instances
-          │
-          ▼
-        Nginx
-          │
-          ▼
-       HTTP :80
+  |
+  | uses
+  +---- Health Probe
+  |
+  +---- Load-Balancing Rule
+  |
+  +---- Backend Pool
+  |
+  | while
+  v
+Autoscale
+  |
+  +---- Scale Out
+  |
+  +---- Scale In
 ```
 
-The most important lesson was understanding how the individual Azure resources work together rather than viewing them as independent services.
-
-The Load Balancer provides traffic distribution and health checking.
-
-The VMSS provides scalable compute.
-
-The NSG provides network traffic filtering.
-
-Nginx provides the actual web service.
-
-Autoscaling changes the number of available compute instances according to the configured scaling rules.
-
-Together, these components form a basic scalable and highly available web application architecture.
+This forms the foundation for understanding more advanced Azure compute and application architectures.
