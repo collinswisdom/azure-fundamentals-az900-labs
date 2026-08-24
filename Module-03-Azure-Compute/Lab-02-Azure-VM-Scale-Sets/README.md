@@ -49,7 +49,7 @@ Each VMSS instance runs Nginx and listens on TCP port 80.
 
 ### Architecture Diagram
 
-![VMSS Architecture](./Diagrams/architecture.png)
+![VMSS Architecture](./diagrams/architecture.png)
 
 ## Resource Configuration
 
