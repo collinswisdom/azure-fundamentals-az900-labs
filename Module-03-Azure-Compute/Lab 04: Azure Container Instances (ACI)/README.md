@@ -6,7 +6,7 @@ This lab demonstrates how to deploy and run a containerized application using **
 
 Azure Container Instances provides a simple way to run containers in Azure without having to provision or manage virtual machines.
 
-The lab covers container deployment, networking, application access, container management, monitoring, and Azure CLI validation.
+The lab covers container deployment, networking, application access, container inspection, logging, lifecycle management, Azure CLI validation, and resource cleanup.
 
 ---
 
@@ -19,18 +19,19 @@ By completing this lab, I will:
 * Create an Azure Container Instance
 * Deploy a containerized application
 * Configure container networking
-* Expose a container application through a public IP address
+* Expose a container application through a public endpoint
 * Configure a DNS name label
 * Access the application from a web browser
 * Inspect container properties and configuration
 * View container logs
 * Manage the container lifecycle
 * Validate the deployment using Azure CLI
+* Inspect resources within an Azure resource group
 * Clean up Azure resources after completing the lab
 
 ---
 
-## Architecture
+# Architecture
 
 The following diagram represents the architecture implemented in this lab:
 
@@ -41,21 +42,25 @@ The following diagram represents the architecture implemented in this lab:
 ```text
 Internet
    │
+   │ HTTP :80
    ▼
-Public IP / DNS
+Public IP / DNS FQDN
    │
    ▼
 Azure Container Instance
    │
    ▼
-Containerized Application
+Container
+   │
+   ▼
+Containerized Web Application
 ```
 
-The user accesses the application through the public endpoint exposed by the Azure Container Instance.
+The application was exposed through a public endpoint using HTTP over TCP port 80.
 
 ---
 
-## Prerequisites
+# Prerequisites
 
 * An active Azure subscription
 * Access to the Azure Portal
@@ -67,7 +72,7 @@ The user accesses the application through the public endpoint exposed by the Azu
 
 # Step 1 — Create the Resource Group
 
-A dedicated resource group is created to contain the resources used for this lab.
+A dedicated resource group was created to contain the resources used during the lab.
 
 ### Configuration
 
@@ -84,22 +89,22 @@ A dedicated resource group is created to contain the resources used for this lab
 
 # Step 2 — Create the Azure Container Instance
 
+An Azure Container Instance was created to host the containerized web application.
+
 Navigate to:
 
 **Azure Portal → Container Instances → Create**
 
-The container instance will host the containerized application.
-
 ### Configuration
 
-| Setting          | Value                                        |
-| ---------------- | -------------------------------------------- |
-| Resource Group   | `rg-aci-lab`                                 |
-| Container Name   | `aci-app-lab`                                |
-| Region           | South Africa North                           |
-| Operating System | Linux                                        |
-| Image Source     | Quickstart image                             |
-| Image            | `mcr.microsoft.com/azuredocs/aci-helloworld` |
+| Setting          | Value                                               |
+| ---------------- | --------------------------------------------------- |
+| Resource Group   | `rg-aci-lab`                                        |
+| Container Name   | `aci-app-lab`                                       |
+| Region           | South Africa North                                  |
+| Operating System | Linux                                               |
+| Image Source     | Quickstart image                                    |
+| Image            | `mcr.microsoft.com/azuredocs/aci-helloworld:latest` |
 
 ### Screenshot
 
@@ -109,16 +114,32 @@ The container instance will host the containerized application.
 
 # Step 3 — Configure Container Networking
 
-Configure the container to accept HTTP traffic.
+The container was configured with a public endpoint so that the web application could be accessed from the Internet.
 
 ### Configuration
 
 | Setting         | Value            |
 | --------------- | ---------------- |
 | DNS Name Label  | Unique DNS label |
-| Port            | 80               |
+| Port            | `80`             |
 | Protocol        | TCP              |
 | IP Address Type | Public           |
+
+### Traffic Flow
+
+```text
+Internet
+   │
+   │ HTTP :80
+   ▼
+Public IP / FQDN
+   │
+   ▼
+Azure Container Instance
+   │
+   ▼
+Web Application
+```
 
 ### Screenshot
 
@@ -128,9 +149,9 @@ Configure the container to accept HTTP traffic.
 
 # Step 4 — Deploy the Container
 
-Review the configuration and deploy the container instance.
+The configured Azure Container Instance was submitted for deployment.
 
-After deployment, verify that the deployment completes successfully.
+Azure provisioned the container instance and started the container using the specified image.
 
 ### Screenshot
 
@@ -140,15 +161,16 @@ After deployment, verify that the deployment completes successfully.
 
 # Step 5 — Verify the Container Instance
 
-Open the deployed container instance and verify:
+After deployment, the container instance was inspected from the Azure Portal.
 
-* Provisioning state
-* Container state
-* IP address
+The following information was verified:
+
+* Container status
+* Public IP address
 * FQDN
-* Operating system
-* Image
 * Port configuration
+* Container image
+* Operating system
 
 ### Screenshot
 
@@ -158,13 +180,15 @@ Open the deployed container instance and verify:
 
 # Step 6 — Test the Application
 
-Open the public FQDN or IP address in a web browser.
-
-The containerized application should load successfully.
+The public FQDN of the container instance was opened in a web browser.
 
 ### Expected Result
 
-The Azure Container Instances sample application should be displayed in the browser.
+The Azure Container Instances sample application displayed:
+
+> **Welcome to Azure Container Instances!**
+
+This confirmed that the container was running and that the application was reachable through the configured public endpoint.
 
 ### Screenshot
 
@@ -174,11 +198,9 @@ The Azure Container Instances sample application should be displayed in the brow
 
 # Step 7 — Inspect Container Logs
 
-Navigate to the container's **Logs** section.
+The container logs were accessed through the Azure Portal.
 
-Review the logs generated by the running container.
-
-This demonstrates how application output can be inspected when troubleshooting a containerized workload.
+Logs provide application output that can be useful when monitoring and troubleshooting containerized workloads.
 
 ### Screenshot
 
@@ -188,15 +210,24 @@ This demonstrates how application output can be inspected when troubleshooting a
 
 # Step 8 — Inspect Container Configuration
 
-Review the container's configuration and identify:
+The deployed container configuration was inspected to understand the compute and runtime settings assigned to the container.
 
-* CPU allocation
-* Memory allocation
-* Image
-* Ports
-* Environment configuration
-* Restart policy
-* Network configuration
+### Observed Configuration
+
+| Setting               | Value                                               |
+| --------------------- | --------------------------------------------------- |
+| Container Name        | `aci-app-lab`                                       |
+| Image                 | `mcr.microsoft.com/azuredocs/aci-helloworld:latest` |
+| Port                  | `80`                                                |
+| CPU                   | `0.5 cores`                                         |
+| Memory                | `1 GiB`                                             |
+| GPU SKU               | None                                                |
+| GPU Count             | `0`                                                 |
+| Commands              | None                                                |
+| Environment Variables | None                                                |
+| Volumes               | None                                                |
+
+This demonstrates that a container has its own resource allocation and runtime configuration.
 
 ### Screenshot
 
@@ -206,15 +237,24 @@ Review the container's configuration and identify:
 
 # Step 9 — Manage the Container Lifecycle
 
-Test basic container lifecycle operations.
+The lifecycle of the Azure Container Instance was tested by stopping and starting the container.
 
-Examples include:
+### Lifecycle Tested
 
-* Restarting the container
-* Stopping the container
-* Starting the container again
+```text
+Running
+   │
+   ▼
+Stopped
+   │
+   ▼
+Started
+   │
+   ▼
+Running
+```
 
-Observe the changes in the container's state.
+After the container was started again, the application endpoint was verified to ensure the container was operational.
 
 ### Screenshot
 
@@ -224,43 +264,36 @@ Observe the changes in the container's state.
 
 # Step 10 — Validate Using Azure CLI
 
-Use Azure CLI to inspect the deployed container instance.
+Azure CLI was used to validate the deployed container instance.
 
-Example commands:
-
-```bash
-az container show \
-  --resource-group rg-aci-lab \
-  --name aci-app-lab
-```
-
-Retrieve the container's IP address:
+### View Container Information
 
 ```bash
 az container show \
   --resource-group rg-aci-lab \
   --name aci-app-lab \
-  --query ipAddress.ip \
-  --output tsv
+  --output table
 ```
 
-Retrieve the fully qualified domain name:
+### Retrieve Container State, IP Address and FQDN
 
 ```bash
 az container show \
   --resource-group rg-aci-lab \
   --name aci-app-lab \
-  --query ipAddress.fqdn \
-  --output tsv
+  --query "{Name:name, State:instanceView.state, IP:ipAddress.ip, FQDN:ipAddress.fqdn}" \
+  --output table
 ```
 
-View container logs:
+### View Container Logs
 
 ```bash
 az container logs \
   --resource-group rg-aci-lab \
   --name aci-app-lab
 ```
+
+These commands provided command-line validation of the container deployment and its runtime information.
 
 ### Screenshot
 
@@ -270,14 +303,19 @@ az container logs \
 
 # Step 11 — Verify Resource Deployment
 
-Confirm that the resource group contains the expected Azure Container Instance.
+The `rg-aci-lab` resource group was inspected to identify the resources created during the lab.
 
-### Expected Resource
+The resource group contained:
 
 ```text
 rg-aci-lab
-└── aci-app-lab
+├── aci-app-lab
+└── DefaultWorkspace-...-JNB
 ```
+
+The `aci-app-lab` resource represents the Azure Container Instance.
+
+The `DefaultWorkspace-...-JNB` resource represents the Log Analytics workspace associated with the Azure environment.
 
 ### Screenshot
 
@@ -287,13 +325,9 @@ rg-aci-lab
 
 # Step 12 — Cleanup
 
-After completing the lab, delete the resource group to prevent unnecessary Azure charges.
+After completing the lab, the entire resource group was deleted to prevent unnecessary Azure charges.
 
-Navigate to:
-
-**Azure Portal → Resource Groups → rg-aci-lab → Delete resource group**
-
-Alternatively, use Azure CLI:
+The following Azure CLI command was used:
 
 ```bash
 az group delete \
@@ -302,51 +336,105 @@ az group delete \
   --no-wait
 ```
 
+The resource group was subsequently removed.
+
+### Verification
+
+```bash
+az group exists --name rg-aci-lab
+```
+
+Expected result:
+
+```text
+false
+```
+
+---
+
+# Security Considerations
+
+Although this was an introductory container lab, several security concepts were demonstrated.
+
+### Public Exposure
+
+The container was configured with a **public IP address and DNS endpoint**.
+
+Public exposure should only be used when required because it makes the application reachable from the Internet.
+
+### Port Minimization
+
+Only **TCP port 80** was exposed for the web application.
+
+Exposing only required ports follows the principle of reducing unnecessary attack surface.
+
+### Container Isolation
+
+The application ran inside a container rather than directly on a traditional virtual machine operating system.
+
+Containers provide application-level isolation while allowing Azure to manage the underlying infrastructure.
+
+### Secrets and Environment Variables
+
+No environment variables or secrets were required for this demonstration.
+
+In production environments, sensitive values should not be hard-coded into container images.
+
+### Resource Cleanup
+
+The temporary resources were deleted after the lab, reducing both cost and unnecessary resource exposure.
+
 ---
 
 # Validation Checklist
 
 | Task                              | Status |
 | --------------------------------- | ------ |
-| Resource group created            | ⬜      |
-| Container Instance created        | ⬜      |
-| Container image deployed          | ⬜      |
-| Port 80 configured                | ⬜      |
-| Public endpoint configured        | ⬜      |
-| Application accessed successfully | ⬜      |
-| Container logs reviewed           | ⬜      |
-| Container configuration inspected | ⬜      |
-| Container lifecycle tested        | ⬜      |
-| Azure CLI validation completed    | ⬜      |
-| Resources cleaned up              | ⬜      |
+| Resource group created            | ✅      |
+| Container Instance created        | ✅      |
+| Container image deployed          | ✅      |
+| Port 80 configured                | ✅      |
+| Public endpoint configured        | ✅      |
+| DNS name label configured         | ✅      |
+| Application accessed successfully | ✅      |
+| Container logs reviewed           | ✅      |
+| Container configuration inspected | ✅      |
+| Container lifecycle tested        | ✅      |
+| Azure CLI validation completed    | ✅      |
+| Resource group inspected          | ✅      |
+| Resources cleaned up              | ✅      |
 
 ---
 
 # Key Concepts Learned
 
-### Azure Container Instances
+## Azure Container Instances
 
-ACI allows containers to run directly in Azure without requiring the user to manage the underlying virtual machines.
+Azure Container Instances allows containers to run directly in Azure without requiring the user to manage the underlying virtual machines.
 
-### Container Image
+## Container Image
 
-A container image contains the application and the dependencies required to run it.
+A container image contains the application and dependencies required to create and run a container.
 
-### Container
+## Container
 
-A running instance of a container image.
+A container is a running instance of a container image.
 
-### Container Port
+## Container Port
 
-The network port exposed by the application running inside the container.
+The container port is the network port used by the application running inside the container.
 
-### Public IP
+## Public IP
 
-Allows the containerized application to be accessed from the internet.
+A public IP allows the containerized application to be accessed from the Internet.
 
-### DNS Name Label
+## DNS Name Label
 
-Provides a DNS-based endpoint for accessing the container.
+A DNS name label provides a DNS-based hostname that can be used to access the container application.
+
+## Container Lifecycle
+
+Containers can be started and stopped as required. Their lifecycle is different from managing a traditional virtual machine.
 
 ---
 
@@ -365,17 +453,29 @@ Provides a DNS-based endpoint for accessing the container.
 
 # Conclusion
 
-This lab demonstrated how to deploy and manage a containerized application using Azure Container Instances.
+This lab demonstrated how to deploy, access, inspect, manage, and validate a containerized application using **Azure Container Instances**.
 
-The lab also demonstrated the progression from traditional virtual machines to managed application platforms and container-based workloads.
+The lab demonstrated the progression from traditional virtual machines to managed application platforms and container-based workloads.
 
-The key takeaway is that **ACI abstracts away much of the infrastructure management required by virtual machines**, allowing the focus to remain on running the containerized application.
+The key takeaway is that **ACI abstracts much of the underlying infrastructure management**, allowing administrators and developers to focus on running containerized applications without managing the underlying virtual machines.
+
+The lab also provided practical exposure to:
+
+* Container deployment
+* Public networking
+* DNS-based application access
+* Container configuration
+* Container logs
+* Container lifecycle management
+* Azure CLI
+* Resource management
+* Basic container security considerations
 
 ---
 
 ## Lab Status
 
-**Status:** In Progress
+**Status:** Completed
 
 **Module:** Module 03 — Azure Compute
 
@@ -387,3 +487,4 @@ The key takeaway is that **ACI abstracts away much of the infrastructure managem
 
 **Resource Group:** `rg-aci-lab`
 
+**Container:** `aci-app-lab`
